@@ -211,16 +211,14 @@
   async function fetchNewsItems() {
     const sets = await Promise.all(NEWS_FEEDS.map(async (f) => {
       try {
-        const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}`, { signal: AbortSignal.timeout(8000) });
-        if (!r.ok) return [];
-        const d = await r.json();
-        return (d.items || []).slice(0, 12).map((it) => ({
-          title: (it.title || '').trim(),
-          link: (it.link || it.guid || '').trim(),
-          source: f.source,
-          isKo: !!f.isKo,
-          ts: it.pubDate ? (new Date(it.pubDate).getTime() || 0) / 1000 : 0,
-        })).filter((x) => x.title && x.link.startsWith('http'));
+        const xml = await proxyText(f.url, 10000);
+        if (!xml) return [];
+        const doc = new DOMParser().parseFromString(xml, 'text/xml');
+        return [...doc.querySelectorAll('item')].slice(0, 12).map((item) => {
+          const g = (tag) => item.getElementsByTagName(tag)[0]?.textContent?.trim() || '';
+          const title = g('title'); const link = g('link') || g('guid'); const pubDate = g('pubDate');
+          return { title, link, source: f.source, isKo: !!f.isKo, ts: pubDate ? (new Date(pubDate).getTime() || 0) / 1000 : 0 };
+        }).filter((x) => x.title && x.link.startsWith('http'));
       } catch (e) { return []; }
     }));
     // 미국 증시 무관 기사 제거
