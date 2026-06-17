@@ -493,44 +493,18 @@ async function fetchAllLive() {
     setBadge('badge-usdkrw',`₩${fmt(usdkrw.price,0)} — ${usdkrw.price>1450?'원화 약세':usdkrw.price>1350?'보통':'원화 강세'}`,c);
   }
 
-  // S&P 500 주봉 기반 기술 지표
+  // 변동성(badge-vol)만 계산 — RSI/MA/모멘텀/위치는 실시간.js가 주봉으로 더 정확하게 계산
   fetchYahoo('%5EGSPC','1wk','1y').then(hist=>{
     if (!hist) return;
     const closes = hist.indicators.quote[0].close.filter(p=>p!=null);
     const n = closes.length;
-    if (n < 2) return;
-    const cur = sp500?.price || closes[n-1];
-    const ma5  = n>=5  ? closes.slice(-5).reduce((a,b)=>a+b)/5 : null;
-    const ma13 = n>=13 ? closes.slice(-13).reduce((a,b)=>a+b)/13 : null;
-    const ma26 = n>=26 ? closes.slice(-26).reduce((a,b)=>a+b)/26 : null;
-    const mom4w= n>=5  ? (closes[n-1]-closes[n-5])/closes[n-5]*100 : null;
+    if (n < 8) return;
     let vol=null;
-    if (n>=8) {
-      const rets=[]; for(let i=n-8;i<n;i++) rets.push((closes[i]-closes[i-1])/closes[i-1]*100);
-      const mean=rets.reduce((a,b)=>a+b)/rets.length;
-      vol=Math.sqrt(rets.reduce((a,b)=>a+(b-mean)**2,0)/rets.length);
-    }
-    const pct1d=sp500?.pct||0;
-    setBadge('badge-rsi',`1일 모멘텀 ${pct1d>=0?'▲':'▼'}${Math.abs(pct1d).toFixed(2)}%`,pct1d>1?'badge-g':pct1d<-1?'badge-r':'badge-b');
-    let maBadge='badge-y',maText='혼조';
-    if (ma5&&ma13&&ma26) {
-      if (cur>ma5&&ma5>ma13&&ma13>ma26){maBadge='badge-g';maText='정배열(상승)';}
-      else if(cur<ma5&&ma5<ma13&&ma13<ma26){maBadge='badge-r';maText='역배열(하락)';}
-    } else if(ma5&&ma13){
-      if(cur>ma5&&ma5>ma13){maBadge='badge-g';maText='단기 정배열';}
-      else if(cur<ma5&&ma5<ma13){maBadge='badge-r';maText='단기 역배열';}
-    }
-    setBadge('badge-ma',maText,maBadge);
-    setBadge('badge-mom',mom4w!=null?`${mom4w>=0?'▲':'▼'} ${Math.abs(mom4w).toFixed(1)}% (4주 변화)`:'N/A',
-      mom4w==null?'badge-b':mom4w>2?'badge-g':mom4w<-2?'badge-r':'badge-y');
-    setBadge('badge-vol',vol!=null?`주간 ±${vol.toFixed(2)}% — ${vol>3?'고변동':vol>1.5?'보통':'저변동'}`:'N/A',
-      vol==null?'badge-b':vol>3?'badge-r':vol>1.5?'badge-y':'badge-g');
-    if (sp500?.high52) {
-      const belowHigh=(sp500.high52-cur)/sp500.high52*100;
-      const aboveLow=sp500.low52?(cur-sp500.low52)/sp500.low52*100:null;
-      setBadge('badge-pos',`고점 대비 -${belowHigh.toFixed(1)}% / 저점 대비 +${aboveLow?aboveLow.toFixed(1):'--'}%`,
-        belowHigh<5?'badge-r':belowHigh<15?'badge-y':'badge-g');
-    }
+    const rets=[]; for(let i=n-8;i<n;i++) rets.push((closes[i]-closes[i-1])/closes[i-1]*100);
+    const mean=rets.reduce((a,b)=>a+b)/rets.length;
+    vol=Math.sqrt(rets.reduce((a,b)=>a+(b-mean)**2,0)/rets.length);
+    setBadge('badge-vol',`주간 ±${vol.toFixed(2)}% — ${vol>3?'고변동':vol>1.5?'보통':'저변동'}`,
+      vol>3?'badge-r':vol>1.5?'badge-y':'badge-g');
     recalcScorecard();
   });
 
