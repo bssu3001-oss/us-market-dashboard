@@ -323,6 +323,7 @@
     }
 
     if (typeof recalcScorecard === 'function') recalcScorecard();
+    if (typeof buildChecklist === 'function') buildChecklist();
     // _liveData 는 window. 없이 접근 (let 선언은 window.* 로 안 잡힘)
     if (typeof applyAnalysis === 'function' && typeof ruleBasedAnalysis === 'function' && typeof _liveData !== 'undefined') {
       if (!localStorage.getItem('anthropic_api_key')) applyAnalysis(ruleBasedAnalysis(_liveData));
@@ -379,6 +380,7 @@
       if (tnx) setB('badge-10y', tnx < 4.0 ? 'badge-g' : tnx > 4.8 ? 'badge-r' : 'badge-y', `10Y ${tnx}%`);
 
       try { if (typeof recalcScorecard === 'function') recalcScorecard(); } catch(e) {}
+      try { if (typeof buildChecklist === 'function') buildChecklist(); } catch(e) {}
     } catch(e) {
       console.log('[시장데이터] 캐시 없음 (처음 실행이거나 아직 생성 전)');
     }
