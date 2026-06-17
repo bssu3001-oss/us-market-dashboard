@@ -94,7 +94,10 @@ def fetch_market_data():
     sp = yf.download('^GSPC', period='1y', interval='1wk', progress=False)
     if sp.empty:
         raise RuntimeError('S&P 500 데이터 없음')
-    closes = sp['Close'].dropna().values.tolist()
+    close_col = sp['Close']
+    if hasattr(close_col, 'ndim') and close_col.ndim > 1:
+        close_col = close_col.iloc[:, 0]
+    closes = [float(v) for v in close_col.dropna().values.tolist()]
     n = len(closes)
     cur = closes[-1]
 
