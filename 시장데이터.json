@@ -1,1 +1,22 @@
-{}
+{
+  "current": 7529.06,
+  "pct": 0,
+  "ma_signal": "bull",
+  "ma_state": "정배열",
+  "rsi": 74.7,
+  "mom4": 0.74,
+  "from_hi": -0.7,
+  "vix": 16.1,
+  "dxy": 99.64,
+  "tnx": 4.43,
+  "crude": 80.0,
+  "gold": 4355.0,
+  "usdkrw": 1515.0,
+  "nasdaq": 26503.34,
+  "nasdaq_pct": 0,
+  "score_pct": 58,
+  "score_label": "매수 검토",
+  "score_emoji": "🟢",
+  "score_desc": "이평선 정배열 (RSI 75) / VIX 16.1 / 10Y금리 4.43% / DXY 99.6",
+  "updated_at": "2026-06-17 22:45 KST"
+}
