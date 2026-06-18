@@ -566,29 +566,29 @@ function setNewsBadgesDirect(titles) {
     ['badge-fed',     ['금리 인하','연준 완화','파월 완화','피벗','rate cut','dovish'],
                       ['금리 인상','연준 긴축','파월 매파','rate hike','hawkish'],
                       '연준 완화(호재)','연준 긴축(악재)','연준 혼조',
-                      ['연준','fed','파월','fomc','금리','기준금리']],
+                      ['연준','fed','파월','fomc','금리','기준금리'],'연준 관망'],
     ['badge-cpi',     ['물가 안정','인플레 완화','물가 하락','cpi 하락'],
                       ['물가 상승','인플레 급등','cpi 상승','인플레 우려'],
                       '물가 완화(호재)','물가 상승(악재)','물가 혼조',
-                      ['물가','cpi','인플레','소비자물가']],
+                      ['물가','cpi','인플레','소비자물가'],'물가 혼조'],
     ['badge-nfp',     ['고용 호조','일자리 증가','실업률 하락','고용 증가'],
                       ['고용 부진','실업 증가','실업률 상승','layoff','감원'],
                       '고용 호조(호재)','고용 부진(악재)','고용 혼조',
-                      ['고용','일자리','실업','nfp','취업','채용']],
+                      ['고용','일자리','실업','nfp','취업','채용'],'고용 혼조'],
     ['badge-earnings',['실적 호조','어닝 서프라이즈','실적 상회','earnings beat'],
                       ['실적 부진','어닝 쇼크','실적 하회','earnings miss'],
                       '실적 호조(호재)','실적 부진(악재)','실적 혼조',
-                      ['실적','어닝','earnings','이익','순이익']],
+                      ['실적','어닝','earnings','이익','순이익'],'실적 혼조'],
     ['badge-trade',   ['무역 합의','관세 완화','수출 증가','trade deal'],
                       ['관세 부과','무역 갈등','관세 인상','trade war'],
                       '무역 호조(호재)','무역 리스크(악재)','무역 혼조',
-                      ['무역','관세','tariff','수출','통상']],
+                      ['무역','관세','tariff','수출','통상'],'무역 주시'],
     ['badge-geo',     ['지정학 완화','휴전','평화','긴장 완화','ceasefire'],
                       ['전쟁','분쟁','군사 충돌','지정학 위기','긴장 고조'],
                       '지정학 안정(호재)','지정학 리스크(악재)','지정학 혼조',
-                      ['전쟁','분쟁','지정학','휴전','군사','conflict']],
+                      ['전쟁','분쟁','지정학','휴전','군사','conflict'],'지정학 주시'],
   ];
-  cfg.forEach(([id, gKw, rKw, gT, rT, nT, relKw]) => {
+  cfg.forEach(([id, gKw, rKw, gT, rT, nT, relKw, dT]) => {
     const el = document.getElementById(id);
     if (!el) return;
     const isG = gKw.some(k => all.includes(k));
@@ -597,7 +597,7 @@ function setNewsBadgesDirect(titles) {
     if      (isG && !isR) { text = gT; cls = 'badge-g'; }
     else if (isR && !isG) { text = rT; cls = 'badge-r'; }
     else if (isG && isR)  { text = nT; cls = 'badge-y'; }
-    else { const h = findKw(relKw); if (!h) return; text = h; cls = 'badge-b'; }
+    else { const h = findKw(relKw); if (h) { text = h; cls = 'badge-b'; } else if (dT) { text = dT; cls = 'badge-y'; } else return; }
     el.textContent = text; el.className = 'badge ' + cls;
   });
 }
