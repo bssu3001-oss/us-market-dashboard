@@ -291,41 +291,44 @@
     function ko(id, gKw, rKw, gT, rT, nT) {
       const isG = gKw.some(k => all.includes(k.toLowerCase()));
       const isR = rKw.some(k => all.includes(k.toLowerCase()));
-      const cls  = isG && !isR ? 'badge-g' : isR && !isG ? 'badge-r' : 'badge-y';
-      const text = isG && !isR ? gT : isR && !isG ? rT : nT;
+      let cls, text;
+      if      (isG && !isR) { cls = 'badge-g'; text = gT; }
+      else if (isR && !isG) { cls = 'badge-r'; text = rT; }
+      else if (isG && isR)  { cls = 'badge-y'; text = nT; }
+      else                  { cls = 'badge-b'; text = '뉴스 없음'; }
       const el = document.getElementById(id);
       if (el) { el.textContent = text; el.className = 'badge ' + cls; }
     }
 
     ko('badge-fed',
-      ['금리 인하','연준 완화','파월 완화','rate cut','dovish','피벗','금리인하'],
-      ['금리 인상','연준 긴축','파월 매파','rate hike','hawkish','긴축 우려'],
-      '연준 완화(호재)', '연준 긴축(악재)', '연준 불확실');
+      ['금리 인하','연준 완화','파월 완화','rate cut','dovish','피벗','금리인하','연준 피벗'],
+      ['금리 인상','연준 긴축','파월 매파','rate hike','hawkish','긴축 우려','동결 연장'],
+      '연준 완화(호재)', '연준 긴축(악재)', '연준 혼조');
 
     ko('badge-cpi',
-      ['물가 안정','인플레 완화','물가 하락','cpi 하락','디스인플레','인플레이션 둔화'],
-      ['물가 상승','인플레 급등','cpi 상승','인플레이션 우려','물가 급등'],
+      ['물가 안정','인플레 완화','물가 하락','cpi 하락','디스인플레','인플레이션 둔화','인플레 둔화'],
+      ['물가 상승','인플레 급등','cpi 상승','인플레이션 우려','물가 급등','인플레이션 심화'],
       '물가 완화(호재)', '물가 상승(악재)', '물가 혼조');
 
     ko('badge-nfp',
-      ['고용 호조','일자리 증가','실업률 하락','nfp 호조','jobs added'],
-      ['고용 부진','실업 증가','실업률 상승','layoffs','job cuts','고용 악화'],
+      ['고용 호조','일자리 증가','실업률 하락','nfp 호조','jobs added','고용 증가','취업자 증가'],
+      ['고용 부진','실업 증가','실업률 상승','layoffs','job cuts','고용 악화','감원'],
       '고용 호조(호재)', '고용 부진(악재)', '고용 혼조');
 
     ko('badge-earnings',
-      ['실적 호조','어닝 서프라이즈','실적 상회','earnings beat','beat estimates'],
-      ['실적 부진','어닝 쇼크','실적 하회','earnings miss','가이던스 하향','profit warning'],
+      ['실적 호조','어닝 서프라이즈','실적 상회','earnings beat','beat estimates','실적 개선'],
+      ['실적 부진','어닝 쇼크','실적 하회','earnings miss','가이던스 하향','profit warning','실적 악화'],
       '실적 호조(호재)', '실적 부진(악재)', '실적 혼조');
 
     ko('badge-trade',
-      ['무역 합의','관세 완화','무역 협상 타결','trade deal','tariff cut','수출 증가'],
-      ['관세 부과','무역 갈등','무역전쟁','tariff hike','trade war','관세 인상'],
-      '무역 호조(호재)', '무역 리스크(악재)', '무역 주시');
+      ['무역 합의','관세 완화','무역 협상 타결','trade deal','tariff cut','수출 증가','관세 면제'],
+      ['관세 부과','무역 갈등','무역전쟁','tariff hike','trade war','관세 인상','무역 제재'],
+      '무역 호조(호재)', '무역 리스크(악재)', '무역 혼조');
 
     ko('badge-geo',
-      ['지정학 완화','휴전','평화 협상','리스크 해소','ceasefire','긴장 완화'],
-      ['전쟁','분쟁','군사','지정학 위기','긴장 고조','conflict'],
-      '지정학 안정(호재)', '지정학 리스크(악재)', '지정학 중립');
+      ['지정학 완화','휴전','평화 협상','리스크 해소','ceasefire','긴장 완화','분쟁 해소'],
+      ['전쟁','분쟁','군사 충돌','지정학 위기','긴장 고조','conflict','군사 작전'],
+      '지정학 안정(호재)', '지정학 리스크(악재)', '지정학 혼조');
 
     const note = document.getElementById('news-live-note');
     if (note && !note.querySelector('#major-news')) {
