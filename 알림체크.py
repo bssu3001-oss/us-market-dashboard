@@ -288,36 +288,35 @@ def fetch_news_headlines():
 # ── 메시지 빌드 ──
 def build_message(data, score_pct, score_label, score_emoji, score_desc, news_titles):
     now = now_kst()
-    dt_str = now.strftime('%Y년 %m월 %d일 %H:%M')
+    ts = now.strftime('%Y-%m-%d %H:%M')
     slot = slot_label()
 
-    p   = data['current']
-    pct = data['pct']
+    p      = data['current']
+    pct    = data['pct']
     nasdaq = data.get('nasdaq')
     npct   = data.get('nasdaq_pct', 0)
     vix    = data.get('vix')
     tnx    = data.get('tnx')
     dxy    = data.get('dxy')
-    usdkrw = data.get('usdkrw')
 
-    arrow = '▲' if pct >= 0 else '▼'
-    n_arrow = '▲' if npct >= 0 else '▼'
+    pct_str = f'+{pct:.2f}' if pct >= 0 else f'{pct:.2f}'
+    n_str   = f'+{npct:.2f}' if npct >= 0 else f'{npct:.2f}'
+
+    nasdaq_line = f'NASDAQ: {nasdaq:,.2f} ({n_str}%)' if nasdaq else ''
+    vix_line    = f'미국 VIX: {vix:.1f}' if vix else ''
+    tnx_line    = f'10년물: {tnx:.2f}%' if tnx else ''
+    dxy_line    = f'DXY: {dxy:.1f}' if dxy else ''
+    macro_parts = [x for x in [vix_line, tnx_line, dxy_line] if x]
+    macro_line  = ' | '.join(macro_parts) if macro_parts else ''
 
     lines = [
-        f'🇺🇸 미국 증시 {slot} 시황',
-        f'{dt_str}',
+        f'🇺🇸 미국 증시 {slot} 시황 [{ts}]',
         '',
-        f'S&P 500: {p:,.2f} ({arrow}{abs(pct):.2f}%)',
-        f'NASDAQ:  {f"{nasdaq:,.2f}" if nasdaq else "N/A"} ({n_arrow}{abs(npct):.2f}%)',
-        f'이평선: {data["ma_state"]} | RSI: {data["rsi"]:.0f}',
+        f'S&P 500: {p:,.2f} ({pct_str}%)',
     ]
-    extras = []
-    if vix:    extras.append(f'VIX {vix:.1f}')
-    if tnx:    extras.append(f'10Y {tnx:.2f}%')
-    if dxy:    extras.append(f'DXY {dxy:.1f}')
-    if usdkrw: extras.append(f'USD/KRW {usdkrw:,.0f}')
-    if extras: lines.append(' | '.join(extras))
-
+    if nasdaq_line: lines.append(nasdaq_line)
+    lines.append(f'이평선: {data["ma_state"]} | RSI: {data["rsi"]:.0f}')
+    if macro_line:  lines.append(macro_line)
     lines += [
         '',
         '━━━━━━━━━━━━',
@@ -328,11 +327,9 @@ def build_message(data, score_pct, score_label, score_emoji, score_desc, news_ti
     top_news = [t for t in news_titles if t][:3]
     if top_news:
         lines.append('')
-        lines.append('📰 주요 뉴스')
-        for t in top_news:
-            lines.append(f'• {t[:50]}')
+        lines.append('📰 주요 뉴스: ' + ' / '.join(t[:40] for t in top_news))
 
-    lines += ['', f'🔗 {DASHBOARD_URL}']
+    lines.append('\n모바일에서 확인해주세요.')
     return '\n'.join(lines)
 
 # ── 메인 ──
