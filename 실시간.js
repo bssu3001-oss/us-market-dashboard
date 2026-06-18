@@ -284,10 +284,34 @@
 
   // ── 한국어 뉴스 키워드로 뉴스 배지 자동 분류 (API 키 불필요) ──
   function updateNewsBadgesFromKorean() {
-    const items = window.__majorNewsItems || [];
+    const items = (window.__majorNewsItems || []).length
+      ? (window.__majorNewsItems || [])
+      : (window.__newsForAnalysis || []).map(t => ({ ko: t, title: t }));
     if (!items.length) return;
     const all = items.map(n => (n.ko || n.title || '')).join(' ').toLowerCase();
 
+    const relKw = {
+      'badge-fed':      ['연준','fed','파월','금리','기준금리','긴축','완화','피벗','fomc'],
+      'badge-cpi':      ['물가','cpi','인플레','소비자물가','인플레이션'],
+      'badge-nfp':      ['고용','일자리','실업','nfp','취업','채용','감원','layoff'],
+      'badge-earnings': ['실적','어닝','earnings','이익','순이익','실적발표','어닝시즌'],
+      'badge-trade':    ['무역','관세','tariff','수출','수입','무역전쟁','통상'],
+      'badge-geo':      ['전쟁','분쟁','지정학','휴전','군사','ceasefire','conflict'],
+    };
+    function cleanTitle2(t) { return (t||'').replace(/\[.*?\]\s*/,'').replace(/\s*[-–]\s*\S+$/, '').trim(); }
+    function trimTitle2(t) { return t.length > 30 ? t.slice(0, 30) + '…' : t; }
+    const latestHeadline = items.length ? trimTitle2(cleanTitle2(items[0].ko || items[0].title || '')) : null;
+
+    function findRelatedHeadline(searchKws) {
+      for (const kw of searchKws) {
+        const found = items.find(n => (n.ko || n.title || '').toLowerCase().includes(kw.toLowerCase()));
+        if (found) {
+          const title = (found.ko || found.title || '').replace(/\[.*?\]\s*/,'').replace(/\s*[-–]\s*\S+$/, '').trim();
+          return title.length > 30 ? title.slice(0, 30) + '…' : title;
+        }
+      }
+      return null;
+    }
     function ko(id, gKw, rKw, gT, rT, nT) {
       const isG = gKw.some(k => all.includes(k.toLowerCase()));
       const isR = rKw.some(k => all.includes(k.toLowerCase()));
@@ -295,7 +319,7 @@
       if      (isG && !isR) { cls = 'badge-g'; text = gT; }
       else if (isR && !isG) { cls = 'badge-r'; text = rT; }
       else if (isG && isR)  { cls = 'badge-y'; text = nT; }
-      else                  { cls = 'badge-b'; text = '뉴스 없음'; }
+      else { cls = 'badge-b'; text = findRelatedHeadline(relKw[id] || []) || latestHeadline || '최신 뉴스 없음'; }
       const el = document.getElementById(id);
       if (el) { el.textContent = text; el.className = 'badge ' + cls; }
     }
