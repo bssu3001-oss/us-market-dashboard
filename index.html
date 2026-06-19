@@ -848,7 +848,7 @@ ${newsLines ? '\n[최신 뉴스 헤드라인]\n' + newsLines : ''}`;
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) { applyAnalysis(ruleBasedAnalysis(liveData)); return; }
     const ag = JSON.parse(match[0]);
-    applyAnalysis(ag);
+    applyAnalysis({ ...ruleBasedAnalysis(liveData), ...ag });
   } catch(e) { applyAnalysis(ruleBasedAnalysis(liveData)); }
 }
 
