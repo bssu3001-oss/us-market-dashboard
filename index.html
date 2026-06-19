@@ -366,7 +366,7 @@ function renderChart(labels, prices) {
   });
 }
 
-async async function fetchYahoo(ticker, interval, range) {
+async function fetchYahoo(ticker, interval, range) {
   const url = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
   const proxies = [
     u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
