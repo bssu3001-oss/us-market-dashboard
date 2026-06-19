@@ -901,7 +901,7 @@ S&P 500: ${n?fmt(n.price)+` (${n.pct>=0?'+':''}${n.pct.toFixed(2)}%)`:'N/A'}
 
 document.getElementById('ai-q').addEventListener('keydown',e=>{if(e.key==='Enter')askAI();});
 
-async function init() {
+async async function init() {
   const chartData = await loadChart('d1');
   if (chartData) renderChart(chartData.labels, chartData.prices);
   const live = await fetchAllLive().catch(()=>null);
