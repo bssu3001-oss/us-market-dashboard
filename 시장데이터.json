@@ -7,16 +7,16 @@
   "mom4": 0.36,
   "from_hi": -1.0,
   "vix": 16.8,
-  "dxy": 100.81,
+  "dxy": 100.77,
   "tnx": 4.45,
   "crude": 80.6,
-  "gold": 4166.0,
-  "usdkrw": 1531.0,
+  "gold": 4173.0,
+  "usdkrw": 1530.0,
   "nasdaq": 26517.93,
   "nasdaq_pct": 0,
   "score_pct": 51,
   "score_label": "관망",
   "score_emoji": "📌",
   "score_desc": "이평선 정배열 (RSI 74) / VIX 16.8 / 10Y금리 4.45% / DXY 100.8",
-  "updated_at": "2026-06-20 01:16 KST"
+  "updated_at": "2026-06-20 02:32 KST"
 }
