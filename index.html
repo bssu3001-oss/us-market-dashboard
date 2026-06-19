@@ -853,6 +853,10 @@ ${newsLines ? '\n[최신 뉴스 헤드라인]\n' + newsLines : ''}`;
 }
 
 function getKey() { return localStorage.getItem('anthropic_api_key')||''; }
+function toggleKeySetup() {
+  const el = document.getElementById('key-setup');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 function saveKey() {
   const k=document.getElementById('api-key-input').value.trim(); if(!k) return;
   localStorage.setItem('anthropic_api_key',k);
