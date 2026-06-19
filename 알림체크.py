@@ -286,53 +286,102 @@ def fetch_news_headlines():
     return titles[:6]
 
 # ── 메시지 빌드 ──
+def gen_ai_fields(data, news_titles):
+    """Claude API로 핵심 매력/리스크/진입단서 생성 (없으면 규칙 기반 폴백)"""
+    ma = data.get('ma_state', '')
+    rsi = data.get('rsi', 50)
+    vix = data.get('vix') or 0
+    from_hi = data.get('from_hi', 0)
+    mom4 = data.get('mom4', 0)
+
+    default_appeal = '이평선 정배열' if '정배열' in ma else ('RSI 과매도' if rsi <= 40 else 'AI/빅테크 실적')
+    default_risk = '금리 인하 지연' if vix > 20 else ('역배열 지속' if '역배열' in ma else 'VIX 상승 주의')
+    default_entry = '이평선 정배열 전환 후' if '역배열' in ma else 'VIX 안정 시 분할 매수'
+    default_danger = '높음' if vix > 28 else ('보통' if vix > 18 else '낮음')
+
+    if not ANTHROPIC_API_KEY:
+        return default_appeal, default_risk, default_entry, default_danger
+
+    try:
+        import urllib.request, json
+        news_str = ' / '.join(news_titles[:3]) if news_titles else '없음'
+        prompt = (
+            f"미국 S&P 500 현황:\n"
+            f"- S&P 500: {data['current']:,.0f} ({data['pct']:+.2f}%)\n"
+            f"- 이평선: {ma} | RSI: {rsi:.0f} | 4주 모멘텀: {mom4:+.1f}%\n"
+            f"- VIX: {vix} | 고점대비: {from_hi:.1f}%\n"
+            f"- 주요 뉴스: {news_str}\n\n"
+            f"아래 JSON으로만 답해:\n"
+            f'{{ "appeal": "핵심 매력 10자 이내", "risk": "핵심 리스크 10자 이내", "entry": "진입 단서 15자 이내", "danger": "낮음/보통/높음 중 하나" }}'
+        )
+        body = json.dumps({
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 200,
+            "messages": [{"role": "user", "content": prompt}]
+        }).encode()
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=body,
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            }
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            res = json.loads(r.read())
+        text = res["content"][0]["text"].strip()
+        start = text.find("{"); end = text.rfind("}") + 1
+        ag = json.loads(text[start:end])
+        return ag.get("appeal", default_appeal), ag.get("risk", default_risk), ag.get("entry", default_entry), ag.get("danger", default_danger)
+    except Exception as e:
+        print(f"  AI 필드 생성 실패: {e}")
+        return default_appeal, default_risk, default_entry, default_danger
+
+
 def build_message(data, score_pct, score_label, score_emoji, score_desc, news_titles):
     now = now_kst()
     ts = now.strftime('%Y-%m-%d %H:%M')
     slot = slot_label()
 
-    p      = data['current']
-    pct    = data['pct']
-    nasdaq = data.get('nasdaq')
-    npct   = data.get('nasdaq_pct', 0)
-    vix    = data.get('vix')
-    tnx    = data.get('tnx')
-    dxy    = data.get('dxy')
+    p   = data['current']
+    pct = data['pct']
+    vix = data.get('vix')
+    tnx = data.get('tnx')
+    dxy = data.get('dxy')
+    arrow = '▲' if pct >= 0 else '▼'
 
-    pct_str = f'+{pct:.2f}' if pct >= 0 else f'{pct:.2f}'
-    n_str   = f'+{npct:.2f}' if npct >= 0 else f'{npct:.2f}'
+    appeal, risk, entry, danger = gen_ai_fields(data, news_titles)
 
-    nasdaq_line = f'NASDAQ: {nasdaq:,.2f} ({n_str}%)' if nasdaq else ''
-    vix_line    = f'미국 VIX: {vix:.1f}' if vix else ''
-    tnx_line    = f'10년물: {tnx:.2f}%' if tnx else ''
-    dxy_line    = f'DXY: {dxy:.1f}' if dxy else ''
-    macro_parts = [x for x in [vix_line, tnx_line, dxy_line] if x]
-    macro_line  = ' | '.join(macro_parts) if macro_parts else ''
+    vix_status = f"{vix:.1f} {'안정' if vix < 18 else '주의' if vix < 28 else '공포'}" if vix else 'N/A'
+    macro_parts = []
+    if tnx: macro_parts.append(f'10년물 {tnx:.2f}%')
+    if dxy: macro_parts.append(f'DXY {dxy:.1f}')
+    macro_line = ' | '.join(macro_parts)
 
-    lines = [
-        f'🇺🇸 미국 증시 {slot} 시황 [{ts}]',
-        '',
-        f'S&P 500: {p:,.2f} ({pct_str}%)',
-    ]
-    if nasdaq_line: lines.append(nasdaq_line)
-    lines.append(f'이평선: {data["ma_state"]} | RSI: {data["rsi"]:.0f}')
-    if macro_line:  lines.append(macro_line)
-    lines += [
-        '',
-        '━━━━━━━━━━━━',
-        f'종합신호: {score_emoji} {score_label} ({score_pct}점)',
-        score_desc,
-    ]
+    news_line = ''
+    if news_titles:
+        news_line = f'\n📰 {news_titles[0][:50]}'
 
-    top_news = [t for t in news_titles if t][:3]
-    if top_news:
-        lines.append('')
-        lines.append('📰 주요 뉴스: ' + ' / '.join(t[:40] for t in top_news))
+    return (
+        f'🇺🇸 미국 증시 {slot} [{ts}]\n'
+        f'━━━━━━━━━━━━\n'
+        f'S&P 500  {p:,.0f} {arrow}{abs(pct):.2f}%\n'
+        f'\n'
+        f'{score_emoji} {score_label}  {score_pct}점 / 100점\n'
+        f'\n'
+        f'📈 핵심 매력  {appeal}\n'
+        f'⚠️ 핵심 리스크  {risk}\n'
+        f'🎯 진입 단서  {entry}\n'
+        f'🔰 위험도  {danger}\n'
+        f'\n'
+        f'── 주요 지표 ──\n'
+        f'이평선 {data["ma_state"]} | RSI {data["rsi"]:.0f}\n'
+        f'VIX {vix_status} | {macro_line}'
+        f'{news_line}'
+    )
 
-    lines.append('\n모바일에서 확인해주세요.')
-    return '\n'.join(lines)
 
-# ── 메인 ──
 def main():
     print(f'[{now_kst().strftime("%Y-%m-%d %H:%M:%S")} KST] 미국증시 알림체크 시작')
     state = load_state()

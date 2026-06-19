@@ -276,7 +276,9 @@
     box.innerHTML = items.map((n) => {
       const ko = (n.ko || n.title).replace(/&/g, '&amp;').replace(/</g, '&lt;');
       const meta = [n.source, relTime(n.ts)].filter(Boolean).join(' · ');
-      return `<a href="${n.link}" target="_blank" rel="noopener" style="display:block;padding:9px 0;border-bottom:0.5px solid var(--border);text-decoration:none;color:var(--text);">` +
+      const ageDay = n.ts ? (Date.now()/1000 - n.ts) / 86400 : 0;
+      const dimStyle = ageDay > 7 ? 'opacity:0.4;' : '';
+      return `<a href="${n.link}" target="_blank" rel="noopener" style="display:block;padding:9px 0;border-bottom:0.5px solid var(--border);text-decoration:none;color:var(--text);${dimStyle}">` +
         `<div style="font-size:13px;line-height:1.45;">${ko}</div>` +
         `<div style="font-size:11px;color:var(--text3);margin-top:3px;">${meta} ↗</div></a>`;
     }).join('');
@@ -460,6 +462,23 @@
   // ── 전체 실행 ──
   async function runRealtime() {
     await loadCachedMarketData();
+
+    // 미국 장 마감 표시 (EST 9:30~16:00 = UTC 14:30~21:00)
+    (function() {
+      const el = document.getElementById('market-status');
+      if (!el) return;
+      const now = new Date();
+      const utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
+      const utcMin = utcH * 60 + utcM;
+      const day = now.getUTCDay(); // 0=일, 6=토
+      const isWeekday = day >= 1 && day <= 5;
+      const openMin = 14*60+30, closeMin = 21*60; // UTC
+      const isOpen = isWeekday && utcMin >= openMin && utcMin < closeMin;
+      el.textContent = isOpen ? '🟢 장 중' : '🔴 장 마감';
+      el.style.background = isOpen ? '#e8fde8' : '#f5f5f7';
+      el.style.color = isOpen ? '#2d6a0a' : '#6e6e73';
+      el.style.display = 'inline-block';
+    })();
 
     let sp500Meta = null;
 

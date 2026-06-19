@@ -92,7 +92,7 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
 
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div class="header" style="margin-bottom:0;">
-      <h1>🇺🇸 미국 시장 대시보드</h1>
+      <h1>🇺🇸 미국 시장 대시보드 <span id="market-status" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;display:none;"></span></h1>
       <p>S&P 500 · NASDAQ · 다우존스 기반 매수 타이밍 분석</p>
     </div>
     <button onclick="location.reload(true)" style="margin-top:4px;padding:7px 18px;border-radius:20px;border:0.5px solid var(--border);background:var(--card-bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;">🔄 새로고침</button>
@@ -120,6 +120,24 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
       <span>뉴스 <strong id="sc-news" style="color:var(--warn-text);">--</strong></span>
     </div>
     <div id="sc-desc" style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;padding:10px 12px;background:rgba(0,0,0,0.04);border-radius:10px;">데이터 로딩 중...</div>
+    <div id="sc-extra" style="margin-top:12px;border-top:0.5px solid var(--border);padding-top:12px;display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span style="color:var(--text2);">핵심 매력</span>
+        <span id="sc-appeal" style="color:var(--text);font-weight:500;text-align:right;max-width:60%;">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span style="color:var(--text2);">핵심 리스크</span>
+        <span id="sc-risk" style="color:var(--text);font-weight:500;text-align:right;max-width:60%;">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span style="color:var(--text2);">진입 단서</span>
+        <span id="sc-entry" style="color:var(--text);font-weight:500;text-align:right;max-width:60%;">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:13px;">
+        <span style="color:var(--text2);">위험도</span>
+        <span id="sc-danger" style="font-weight:600;">--</span>
+      </div>
+    </div>
   </div>
 
   <div class="section-label">S&P 500 (뉴욕증권거래소)</div>
@@ -172,15 +190,35 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
   <hr class="divider">
 
   <div class="section-label">주요 이벤트 일정</div>
-  <div class="card" style="margin-bottom:16px;">
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <tbody style="line-height:2.2;">
-        <tr><td style="color:var(--text2);width:60px;">07-30</td><td>FOMC 금리결정</td><td style="text-align:right;color:var(--text3);">예정</td></tr>
-        <tr><td style="color:var(--text2);">07-11</td><td>미국 CPI 발표</td><td style="text-align:right;color:var(--text3);">예정</td></tr>
-        <tr><td style="color:var(--text2);">07-03</td><td>미국 고용보고서(NFP)</td><td style="text-align:right;color:var(--text3);">예정</td></tr>
-      </tbody>
-    </table>
+  <div class="card" style="margin-bottom:16px;" id="event-calendar">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody id="event-tbody" style="line-height:2.2;"></tbody></table>
   </div>
+  <script>
+  (function(){
+    const EVENTS = [
+      { date: '2026-07-30', label: 'FOMC 금리결정' },
+      { date: '2026-07-11', label: '미국 CPI 발표' },
+      { date: '2026-08-01', label: '미국 고용보고서 (NFP)' },
+      { date: '2026-09-17', label: 'FOMC 금리결정 (9월)' },
+      { date: '2026-10-09', label: '미국 CPI 발표 (10월)' },
+      { date: '2026-11-05', label: 'FOMC 금리결정 (11월)' },
+    ];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const upcoming = EVENTS
+      .map(e => ({ ...e, diff: Math.round((new Date(e.date) - today) / 86400000) }))
+      .filter(e => e.diff >= 0)
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 4);
+    const tbody = document.getElementById('event-tbody');
+    if (tbody) tbody.innerHTML = upcoming.map(e => {
+      const mm = e.date.slice(5, 7), dd = e.date.slice(8, 10);
+      const dTag = e.diff === 0 ? '<span style="color:#c0392b;font-weight:700;">D-DAY</span>'
+                 : e.diff <= 7 ? `<span style="color:#BA7517;font-weight:600;">D-${e.diff}</span>`
+                 : `<span style="color:var(--text3);">D-${e.diff}</span>`;
+      return `<tr><td style="color:var(--text2);width:60px;">${mm}-${dd}</td><td>${e.label}</td><td style="text-align:right;">${dTag}</td></tr>`;
+    }).join('');
+  })();
+  </script>
   <hr class="divider" style="margin-top:0;">
 
   <div class="section-label">매수 계획</div>
@@ -754,6 +792,20 @@ function applyAnalysis(ag) {
   if (ag.buy2_title)     { document.getElementById('ag-buy2-title').textContent=ag.buy2_title; document.getElementById('ag-buy2-desc').textContent=ag.buy2_desc; }
   if (ag.sell_title)     { document.getElementById('ag-sell-title').textContent=ag.sell_title; document.getElementById('ag-sell-desc').textContent=ag.sell_desc; }
   if (ag.sc_desc)        { document.getElementById('sc-desc').textContent=ag.sc_desc; }
+  if (ag.sc_appeal || ag.sc_risk || ag.sc_entry || ag.sc_danger) {
+    const extra = document.getElementById('sc-extra');
+    if (extra) extra.style.display = 'block';
+    if (ag.sc_appeal) { const el = document.getElementById('sc-appeal'); if(el) el.textContent = ag.sc_appeal; }
+    if (ag.sc_risk)   { const el = document.getElementById('sc-risk');   if(el) el.textContent = ag.sc_risk; }
+    if (ag.sc_entry)  { const el = document.getElementById('sc-entry');  if(el) el.textContent = ag.sc_entry; }
+    if (ag.sc_danger) {
+      const el = document.getElementById('sc-danger');
+      if (el) {
+        el.textContent = ag.sc_danger;
+        el.style.color = ag.sc_danger === '높음' ? '#c0392b' : ag.sc_danger === '낮음' ? '#2d6a0a' : '#BA7517';
+      }
+    }
+  }
   if (ag.chart_analysis) { document.getElementById('ai-chart-analysis').textContent=ag.chart_analysis; }
 }
 
@@ -781,7 +833,7 @@ ${newsLines ? '\n[최신 뉴스 헤드라인]\n' + newsLines : ''}`;
       method:'POST',
       headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:900,system:ctx,messages:[{role:'user',content:`아래 JSON 형식으로만 답하세요 (다른 텍스트 없이):
-{"now_title":"📌 지금 — [현황]","now_desc":"[2문장]","buy1_title":"🟢 1차 매수 조건","buy1_desc":"[2문장]","buy2_title":"🟢 2차 매수 조건","buy2_desc":"[2문장]","sell_title":"🔴 손절 조건","sell_desc":"[1~2문장]","sc_desc":"[종합 분석 2~3문장]","chart_analysis":"• 현재 지수: [가격] ([변화율]) — [한줄요약]\\n\\n• 추세 (이평): [분석]\\n\\n• 모멘텀: [분석]\\n\\n• 한 줄 결론: [결론]"}`}]})
+{"now_title":"📌 지금 — [현황]","now_desc":"[2문장]","buy1_title":"🟢 1차 매수 조건","buy1_desc":"[2문장]","buy2_title":"🟢 2차 매수 조건","buy2_desc":"[2문장]","sell_title":"🔴 손절 조건","sell_desc":"[1~2문장]","sc_desc":"[종합 분석 2~3문장]","sc_appeal":"핵심 매력 10자 이내","sc_risk":"핵심 리스크 10자 이내","sc_entry":"진입 단서 15자 이내","sc_danger":"낮음/보통/높음 중 하나","chart_analysis":"• 현재 지수: [가격] ([변화율]) — [한줄요약]\\n\\n• 추세 (이평): [분석]\\n\\n• 모멘텀: [분석]\\n\\n• 한 줄 결론: [결론]"}`}]})
     });
     const d = await r.json();
     if (d.error) { applyAnalysis(ruleBasedAnalysis(liveData)); return; }
