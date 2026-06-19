@@ -756,7 +756,31 @@ function ruleBasedAnalysis(liveData) {
     ? `매수 평균가 대비 ${newsAdverse ? '-8%' : '-10%'} 이탈(${fmt(sell_price)} 이하) 시 기계적 손절. 조기 손절 신호: VIX 40 이상 급등 / FOMC 예상 밖 금리 인상 / 10년물 5% 돌파.`
     : '매수 평균가 대비 -10% 이탈 시 기계적 손절 실행.';
 
-  const sc_desc = `이평선 ${maState || '혼조'}, 4주 모멘텀 ${momState || '계산 중'}, VIX ${vix ? vix.toFixed(1)+'('+vixState+')' : 'N/A'}, 10년물 ${tnx ? tnx.toFixed(2)+'%' : 'N/A'}.${hasNews ? ' [최신 뉴스] ' + newsContext + '.' : ''} ${scLabel} 판단 — ${maBadge==='badge-g' ? '분할 매수 단계적 검토 가능.' : maBadge==='badge-r' ? '추세 회복 확인 후 진입 권장.' : '관망하며 추가 신호 대기.'}`;
+  function mkChip(label, val, color) {
+    const bg = {green:'#e8fde8',red:'#fde8e8',yellow:'#fdf6e8',blue:'#e8f0fe'}[color]||'#e8f0fe';
+    const fg = {green:'#2d6a0a',red:'#c0392b',yellow:'#BA7517',blue:'#1565c0'}[color]||'#1565c0';
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;padding:6px 4px;border-radius:10px;background:${bg};"><span style="font-size:9px;color:${fg};opacity:0.8;margin-bottom:2px;white-space:nowrap;">${label}</span><span style="font-size:12px;font-weight:700;color:${fg};text-align:center;line-height:1.2;">${val}</span></div>`;
+  }
+  const maColor  = maBadge==='badge-g'?'green':maBadge==='badge-r'?'red':'yellow';
+  const maShort  = maState.includes('정배열')?'정배열 ↑':maState.includes('역배열')?'역배열 ↓':'혼조';
+  const momColor = momState.includes('▲')?'green':momState.includes('▼')?'red':'yellow';
+  const momShort = momState ? momState.replace(/모멘텀\s*/,'').replace(/\(.*?\)/g,'').trim() || '보합' : '보합';
+  const vixColor = vix>28?'red':vix>18?'yellow':'green';
+  const vixShort = vix?vix.toFixed(1)+' '+(vix>28?'공포':vix>18?'주의':'안정'):'N/A';
+  const rsiText  = document.getElementById('badge-rsi')?.textContent || '';
+  const rsiMatch = rsiText.match(/RSI\s*([\d.]+)/);
+  const rsiVal   = rsiMatch ? parseFloat(rsiMatch[1]) : null;
+  const rsiColor = rsiVal == null ? 'blue' : rsiVal >= 70 ? 'red' : rsiVal <= 35 ? 'green' : 'yellow';
+  const rsiShort = rsiVal != null ? `RSI ${rsiVal}` : '로딩 중';
+  const tnxColor = tnx>5?'red':tnx>4.5?'yellow':'green';
+  const tnxShort = tnx?tnx.toFixed(2)+'%':'N/A';
+  const eemPctC  = _liveData?.eem?.pct ?? null;
+  const eemColor = eemPctC == null ? 'blue' : eemPctC >= 0.5 ? 'green' : eemPctC <= -0.5 ? 'red' : 'yellow';
+  const eemShort = eemPctC != null ? `${eemPctC >= 0 ? '▲' : '▼'}${Math.abs(eemPctC).toFixed(2)}%` : '--';
+  const dxyPctC  = _liveData?.dxy?.pct ?? null;
+  const dxyColor = dxyPctC == null ? 'blue' : dxyPctC <= -0.3 ? 'green' : dxyPctC >= 0.3 ? 'red' : 'yellow';
+  const dxyShort = _liveData?.dxy?.price ? _liveData.dxy.price.toFixed(1) : 'N/A';
+  const sc_desc = `<div style="display:flex;gap:3px;flex-wrap:wrap;">${mkChip('이평선',maShort,maColor)}${mkChip('모멘텀',momShort,momColor)}${mkChip('RSI',rsiShort,rsiColor)}${mkChip('VIX',vixShort,vixColor)}${mkChip('10년물',tnxShort,tnxColor)}${mkChip('EEM',eemShort,eemColor)}${mkChip('DXY',dxyShort,dxyColor)}</div>`;
 
   const trendConclusion = maBadge==='badge-g'
     ? (newsFavorable ? '상승 추세 + 뉴스 호재 — 눌림목 매수 적극 검토' : '상승 추세 유지 — 눌림목 매수 기회 탐색')
@@ -792,7 +816,7 @@ function applyAnalysis(ag) {
   if (ag.buy2_title)     { document.getElementById('ag-buy2-title').textContent=ag.buy2_title; document.getElementById('ag-buy2-desc').textContent=ag.buy2_desc; }
   if (ag.sell_title)     { document.getElementById('ag-sell-title').textContent=ag.sell_title; document.getElementById('ag-sell-desc').textContent=ag.sell_desc; }
   if (ag.sc_oneliner)    { const el = document.getElementById('sc-oneliner'); if(el) el.textContent=ag.sc_oneliner; }
-  if (ag.sc_desc)        { document.getElementById('sc-desc').textContent=ag.sc_desc; }
+  if (ag.sc_desc)        { document.getElementById('sc-desc').innerHTML=ag.sc_desc; }
   if (ag.sc_appeal || ag.sc_risk || ag.sc_entry || ag.sc_danger) {
     const extra = document.getElementById('sc-extra'); if(extra) extra.style.display='block';
   }
