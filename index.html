@@ -120,22 +120,25 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
       <span>뉴스 <strong id="sc-news" style="color:var(--warn-text);">--</strong></span>
     </div>
     <div id="sc-desc" style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;padding:10px 12px;background:rgba(0,0,0,0.04);border-radius:10px;">데이터 로딩 중...</div>
-    <div id="sc-extra" style="margin-top:12px;border-top:0.5px solid var(--border);padding-top:12px;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
-        <span style="color:var(--text2);">핵심 매력</span>
-        <span id="sc-appeal" style="color:var(--text);font-weight:500;text-align:right;max-width:60%;">--</span>
+    <div id="sc-extra" style="margin-top:12px;border-top:0.5px solid rgba(0,0,0,0.08);padding-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
+        <span style="font-size:12px;color:var(--text3);flex-shrink:0;width:72px;">가격 위치</span>
+        <span id="sc-price-pos" style="font-size:12px;color:var(--text);text-align:right;">--</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
-        <span style="color:var(--text2);">핵심 리스크</span>
-        <span id="sc-risk" style="color:var(--text);font-weight:500;text-align:right;max-width:60%;">--</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
+        <span style="font-size:12px;color:var(--text3);flex-shrink:0;width:72px;">핵심 매력</span>
+        <span id="sc-appeal" style="font-size:12px;color:var(--text);text-align:right;line-height:1.5;">--</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
-        <span style="color:var(--text2);">진입 단서</span>
-        <span id="sc-entry" style="color:var(--text);font-weight:500;text-align:right;max-width:60%;">--</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
+        <span style="font-size:12px;color:var(--text3);flex-shrink:0;width:72px;">핵심 리스크</span>
+        <span id="sc-risk" style="font-size:12px;color:var(--text);text-align:right;line-height:1.5;">--</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:13px;">
-        <span style="color:var(--text2);">위험도</span>
-        <span id="sc-danger" style="font-weight:600;">--</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
+        <span style="font-size:12px;color:var(--text3);flex-shrink:0;width:72px;">진입 단서</span>
+        <span id="sc-entry" style="font-size:12px;color:var(--text);text-align:right;line-height:1.5;">--</span>
+      </div>
+      <div style="margin-top:10px;">
+        <span id="sc-danger" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;background:#fde8e8;color:#c0392b;">위험도 --</span>
       </div>
     </div>
   </div>
@@ -783,7 +786,15 @@ function ruleBasedAnalysis(liveData) {
     `• 한 줄 결론: ${trendConclusion}`
   ].filter(Boolean).join('\n\n');
 
-  return { now_title, now_desc, buy1_title: '🟢 1차 매수 조건', buy1_desc, buy2_title: '🟢 2차 매수 조건', buy2_desc, sell_title: '🔴 손절 조건', sell_desc, sc_desc, chart_analysis };
+  // sc-extra 기본값
+  const fromHiEl = document.getElementById('badge-pos');
+  const fromHiText = fromHiEl?.textContent || '';
+  const sc_price_pos = fromHiText || '데이터 로딩 중';
+  const sc_appeal = maBadge === 'badge-g' ? 'AI/빅테크 실적 호조' : (vix < 18 ? '변동성 안정, 추세 유지' : '저점 매수 기회');
+  const sc_risk = vix > 28 ? '공포 구간, VIX 급등' : (maBadge === 'badge-r' ? '역배열, 추세 약세' : '금리 인하 지연 우려');
+  const sc_entry = maBadge === 'badge-g' ? 'VIX 안정 시 분할 매수' : (vix > 28 ? '변동성 완화 후 진입' : '이평선 정배열 전환 확인 후');
+  const sc_danger = vix > 28 ? '높음' : (vix > 18 ? '보통' : '낮음');
+  return { now_title, now_desc, buy1_title: '🟢 1차 매수 조건', buy1_desc, buy2_title: '🟢 2차 매수 조건', buy2_desc, sell_title: '🔴 손절 조건', sell_desc, sc_desc, chart_analysis, sc_price_pos, sc_appeal, sc_risk, sc_entry, sc_danger };
 }
 
 function applyAnalysis(ag) {
@@ -792,18 +803,16 @@ function applyAnalysis(ag) {
   if (ag.buy2_title)     { document.getElementById('ag-buy2-title').textContent=ag.buy2_title; document.getElementById('ag-buy2-desc').textContent=ag.buy2_desc; }
   if (ag.sell_title)     { document.getElementById('ag-sell-title').textContent=ag.sell_title; document.getElementById('ag-sell-desc').textContent=ag.sell_desc; }
   if (ag.sc_desc)        { document.getElementById('sc-desc').textContent=ag.sc_desc; }
-  if (ag.sc_appeal || ag.sc_risk || ag.sc_entry || ag.sc_danger) {
-    const extra = document.getElementById('sc-extra');
-    if (extra) extra.style.display = 'block';
-    if (ag.sc_appeal) { const el = document.getElementById('sc-appeal'); if(el) el.textContent = ag.sc_appeal; }
-    if (ag.sc_risk)   { const el = document.getElementById('sc-risk');   if(el) el.textContent = ag.sc_risk; }
-    if (ag.sc_entry)  { const el = document.getElementById('sc-entry');  if(el) el.textContent = ag.sc_entry; }
-    if (ag.sc_danger) {
-      const el = document.getElementById('sc-danger');
-      if (el) {
-        el.textContent = ag.sc_danger;
-        el.style.color = ag.sc_danger === '높음' ? '#c0392b' : ag.sc_danger === '낮음' ? '#2d6a0a' : '#BA7517';
-      }
+  if (ag.sc_price_pos) { const el = document.getElementById('sc-price-pos'); if(el) el.textContent = ag.sc_price_pos; }
+  if (ag.sc_appeal)    { const el = document.getElementById('sc-appeal');    if(el) el.textContent = ag.sc_appeal; }
+  if (ag.sc_risk)      { const el = document.getElementById('sc-risk');      if(el) el.textContent = ag.sc_risk; }
+  if (ag.sc_entry)     { const el = document.getElementById('sc-entry');     if(el) el.textContent = ag.sc_entry; }
+  if (ag.sc_danger) {
+    const el = document.getElementById('sc-danger');
+    if (el) {
+      el.textContent = '위험도 ' + ag.sc_danger;
+      const clr = ag.sc_danger === '높음' ? {bg:'#fde8e8',c:'#c0392b'} : ag.sc_danger === '낮음' ? {bg:'#e8fde8',c:'#2d6a0a'} : {bg:'#fdf6e8',c:'#BA7517'};
+      el.style.background = clr.bg; el.style.color = clr.c;
     }
   }
   if (ag.chart_analysis) { document.getElementById('ai-chart-analysis').textContent=ag.chart_analysis; }
@@ -833,7 +842,7 @@ ${newsLines ? '\n[최신 뉴스 헤드라인]\n' + newsLines : ''}`;
       method:'POST',
       headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:900,system:ctx,messages:[{role:'user',content:`아래 JSON 형식으로만 답하세요 (다른 텍스트 없이):
-{"now_title":"📌 지금 — [현황]","now_desc":"[2문장]","buy1_title":"🟢 1차 매수 조건","buy1_desc":"[2문장]","buy2_title":"🟢 2차 매수 조건","buy2_desc":"[2문장]","sell_title":"🔴 손절 조건","sell_desc":"[1~2문장]","sc_desc":"[종합 분석 2~3문장]","sc_appeal":"핵심 매력 10자 이내","sc_risk":"핵심 리스크 10자 이내","sc_entry":"진입 단서 15자 이내","sc_danger":"낮음/보통/높음 중 하나","chart_analysis":"• 현재 지수: [가격] ([변화율]) — [한줄요약]\\n\\n• 추세 (이평): [분석]\\n\\n• 모멘텀: [분석]\\n\\n• 한 줄 결론: [결론]"}`}]})
+{"now_title":"📌 지금 — [현황]","now_desc":"[2문장]","buy1_title":"🟢 1차 매수 조건","buy1_desc":"[2문장]","buy2_title":"🟢 2차 매수 조건","buy2_desc":"[2문장]","sell_title":"🔴 손절 조건","sell_desc":"[1~2문장]","sc_desc":"[종합 분석 2~3문장]","sc_price_pos":"52주 고점 대비 위치 (예: 고점대비 -8%)","sc_appeal":"핵심 매력 10자 이내","sc_risk":"핵심 리스크 10자 이내","sc_entry":"진입 단서 15자 이내","sc_danger":"낮음/보통/높음 중 하나","chart_analysis":"• 현재 지수: [가격] ([변화율]) — [한줄요약]\\n\\n• 추세 (이평): [분석]\\n\\n• 모멘텀: [분석]\\n\\n• 한 줄 결론: [결론]"}`}]})
     });
     const d = await r.json();
     if (d.error) { applyAnalysis(ruleBasedAnalysis(liveData)); return; }
