@@ -371,6 +371,46 @@
     }
   }
 
+  // ── 뉴스 신호 AI 분류 (Claude API로 인도 대시보드와 동일 방식) ──
+  function getAnthropicKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+
+  async function updateNewsSignals() {
+    const key = getAnthropicKey();
+    if (!key) {
+      const note = document.getElementById('news-live-note');
+      if (note) note.textContent = '🔑 AI 키 입력 시 뉴스 신호가 실시간 갱신됩니다';
+      return;
+    }
+    const items = window.__majorNewsItems || [];
+    const newsBlock = items.slice(0, 8).map((n) => '- ' + (n.title || n.ko)).join('\n');
+    if (!newsBlock) return;
+
+    const sys = '당신은 미국 증시 뉴스 분석가입니다. 주어진 헤드라인을 보고 각 항목을 평가하세요. 반드시 JSON만 출력합니다.';
+    const prompt = `아래는 오늘 미국 증시 관련 실제 헤드라인입니다.\n${newsBlock}\n\n이 뉴스들을 근거로 각 항목(fed=연준금리, cpi=물가, nfp=고용, earnings=기업실적, trade=무역관세, geo=지정학)에 대해 한국어 12자 이내 label 과 미국 증시 영향 sentiment(good=호재, bad=악재, neutral=중립)를 매기세요. 관련 뉴스가 없으면 neutral.\n다음 형식의 JSON만 출력:\n{"fed":{"label":"...","sentiment":"good|bad|neutral"},"cpi":{...},"nfp":{...},"earnings":{...},"trade":{...},"geo":{...}}`;
+
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, system: sys, messages: [{ role: 'user', content: prompt }] }),
+      });
+      const d = await r.json();
+      const text = d.content?.[0]?.text || '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) return;
+      const obj = JSON.parse(m[0]);
+      const sentCls = { good: 'badge-g', bad: 'badge-r', neutral: 'badge-y' };
+      const idMap = { fed: 'badge-fed', cpi: 'badge-cpi', nfp: 'badge-nfp', earnings: 'badge-earnings', trade: 'badge-trade', geo: 'badge-geo' };
+      for (const [k, v] of Object.entries(obj)) {
+        if (!v || !v.label) continue;
+        const el = document.getElementById(idMap[k]);
+        if (el) { el.textContent = v.label; el.className = 'badge ' + (sentCls[v.sentiment] || 'badge-y'); }
+      }
+      const note = document.getElementById('news-live-note');
+      if (note) note.textContent = '✓ 뉴스 신호 방금 갱신됨';
+    } catch (e) { /* 실패 시 키워드 분류 유지 */ }
+  }
+
   // ── 시장데이터.json 캐시 로드 ──
   async function loadCachedMarketData() {
     try {
@@ -507,6 +547,8 @@
 
     // 한국어 뉴스로 뉴스 배지 자동 분류
     try { updateNewsBadgesFromKorean(); } catch (e) {}
+    // Claude API로 뉴스 신호 정밀 분류 (인도 대시보드와 동일 방식)
+    try { await updateNewsSignals(); } catch (e) {}
 
     // 종합신호 재계산
     try { if (typeof recalcScorecard === 'function') recalcScorecard(); } catch (e) {}
