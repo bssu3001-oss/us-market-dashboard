@@ -92,8 +92,8 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
 
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div class="header" style="margin-bottom:0;">
-      <h1>🇺🇸 미국 시장 대시보드 <span id="market-status" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;display:none;"></span></h1>
-      <p>S&P 500 · NASDAQ · 다우존스 기반 매수 타이밍 분석</p>
+      <h1>🇺🇸 미국 시장 대시보드</h1>
+      <p id="sc-oneliner" style="font-size:13px;color:var(--text2);margin-top:3px;">--</p>
     </div>
     <button onclick="location.reload(true)" style="margin-top:4px;padding:7px 18px;border-radius:20px;border:0.5px solid var(--border);background:var(--card-bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;">🔄 새로고침</button>
   </div>
@@ -117,9 +117,10 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
     <div style="display:flex;gap:16px;font-size:11px;color:var(--text2);">
       <span>기술적 <strong id="sc-tech" style="color:var(--warn-text);">--</strong></span>
       <span>매크로 <strong id="sc-macro" style="color:var(--warn-text);">--</strong></span>
-      <span>뉴스 <strong id="sc-news" style="color:var(--warn-text);">--</strong></span>
+      <span id="sc-news" style="display:none;"></span>
     </div>
-    <div id="sc-extra" style="margin-top:12px;border-top:0.5px solid rgba(0,0,0,0.08);padding-top:12px;">
+    <div id="sc-desc" style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;padding:10px 12px;background:rgba(0,0,0,0.04);border-radius:10px;">데이터 로딩 중...</div>
+    <div id="sc-extra" style="margin-top:12px;border-top:0.5px solid rgba(0,0,0,0.08);padding-top:12px;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);">
         <span style="font-size:12px;color:var(--text3);flex-shrink:0;width:72px;">가격 위치</span>
         <span id="sc-price-pos" style="font-size:12px;color:var(--text);text-align:right;">--</span>
@@ -144,7 +145,7 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
 
   <div class="section-label">S&P 500 (뉴욕증권거래소)</div>
   <div class="main-header">
-    <div class="idx-name">S&P 500</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;"><div class="idx-name">S&P 500</div><span id="market-status" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;display:none;"></span></div>
     <div class="idx-price" id="live-sp500-price">--</div>
     <div class="idx-change" id="live-sp500-change">--</div>
     <div class="ohlc-row">
@@ -220,24 +221,11 @@ body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background
   </script>
   <hr class="divider" style="margin-top:0;">
 
-  <div class="section-label">매수 계획</div>
-  <div class="card">
-    <div class="card-title" style="margin-bottom:10px;">💰 투자 계획</div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead>
-        <tr style="color:var(--text2);font-size:11px;border-bottom:1px solid var(--border);">
-          <th style="text-align:left;padding:5px 0;font-weight:500;">단계</th>
-          <th style="text-align:right;padding:5px 0;font-weight:500;">금액</th>
-          <th style="text-align:right;padding:5px 0;font-weight:500;">비고</th>
-        </tr>
-      </thead>
-      <tbody style="line-height:2.2;">
-        <tr><td style="color:var(--text2);">1차 매수</td><td style="text-align:right;font-weight:600;">미정</td><td style="text-align:right;color:var(--text3);">—</td></tr>
-        <tr><td style="color:var(--text2);">2차 분할매수</td><td style="text-align:right;font-weight:600;">미정</td><td style="text-align:right;color:var(--text3);">—</td></tr>
-        <tr style="border-top:1px solid var(--border);font-weight:600;"><td>합계</td><td style="text-align:right;">미정</td><td></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div style="display:none" id="buy-checklist"></div>
+  <div style="display:none" id="ag-now"><div id="ag-now-title"></div><div id="ag-now-desc"></div></div>
+  <div style="display:none" id="ag-buy1"><div id="ag-buy1-title"></div><div id="ag-buy1-desc"></div></div>
+  <div style="display:none" id="ag-buy2"><div id="ag-buy2-title"></div><div id="ag-buy2-desc"></div></div>
+  <div style="display:none" id="ag-sell"><div id="ag-sell-title"></div><div id="ag-sell-desc"></div></div>
 
   <hr class="divider">
 
@@ -792,7 +780,10 @@ function ruleBasedAnalysis(liveData) {
   const sc_risk = vix > 28 ? '공포 구간, VIX 급등' : (maBadge === 'badge-r' ? '역배열, 추세 약세' : '금리 인하 지연 우려');
   const sc_entry = maBadge === 'badge-g' ? 'VIX 안정 시 분할 매수' : (vix > 28 ? '변동성 완화 후 진입' : '이평선 정배열 전환 확인 후');
   const sc_danger = vix > 28 ? '높음' : (vix > 18 ? '보통' : '낮음');
-  return { now_title, now_desc, buy1_title: '🟢 1차 매수 조건', buy1_desc, buy2_title: '🟢 2차 매수 조건', buy2_desc, sell_title: '🔴 손절 조건', sell_desc, sc_desc, chart_analysis, sc_price_pos, sc_appeal, sc_risk, sc_entry, sc_danger };
+  const sc_oneliner = price
+    ? `S&P 500 ${fmt(price)} (${pctStr}) · VIX ${vix ? vix.toFixed(1) : 'N/A'} · ${scLabel || '분석 중'}`
+    : '데이터 로딩 중...';
+  return { now_title, now_desc, buy1_title: '🟢 1차 매수 조건', buy1_desc, buy2_title: '🟢 2차 매수 조건', buy2_desc, sell_title: '🔴 손절 조건', sell_desc, sc_desc, chart_analysis, sc_price_pos, sc_appeal, sc_risk, sc_entry, sc_danger, sc_oneliner };
 }
 
 function applyAnalysis(ag) {
@@ -800,7 +791,11 @@ function applyAnalysis(ag) {
   if (ag.buy1_title)     { document.getElementById('ag-buy1-title').textContent=ag.buy1_title; document.getElementById('ag-buy1-desc').textContent=ag.buy1_desc; }
   if (ag.buy2_title)     { document.getElementById('ag-buy2-title').textContent=ag.buy2_title; document.getElementById('ag-buy2-desc').textContent=ag.buy2_desc; }
   if (ag.sell_title)     { document.getElementById('ag-sell-title').textContent=ag.sell_title; document.getElementById('ag-sell-desc').textContent=ag.sell_desc; }
+  if (ag.sc_oneliner)    { const el = document.getElementById('sc-oneliner'); if(el) el.textContent=ag.sc_oneliner; }
   if (ag.sc_desc)        { document.getElementById('sc-desc').textContent=ag.sc_desc; }
+  if (ag.sc_appeal || ag.sc_risk || ag.sc_entry || ag.sc_danger) {
+    const extra = document.getElementById('sc-extra'); if(extra) extra.style.display='block';
+  }
   if (ag.sc_price_pos) { const el = document.getElementById('sc-price-pos'); if(el) el.textContent = ag.sc_price_pos; }
   if (ag.sc_appeal)    { const el = document.getElementById('sc-appeal');    if(el) el.textContent = ag.sc_appeal; }
   if (ag.sc_risk)      { const el = document.getElementById('sc-risk');      if(el) el.textContent = ag.sc_risk; }
