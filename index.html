@@ -375,14 +375,22 @@ function renderChart(labels, prices) {
   });
 }
 
-async function fetchYahoo(ticker, interval, range) {
-  try {
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
-    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-    if (!r.ok) return null;
-    const j = await r.json();
-    return j.chart.result[0];
-  } catch(e) { return null; }
+async async function fetchYahoo(ticker, interval, range) {
+  const url = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=${interval}&range=${range}`;
+  const proxies = [
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://thingproxy.freeboard.io/fetch/${u}`,
+  ];
+  for (const make of proxies) {
+    try {
+      const r = await fetch(make(url));
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j?.chart?.result?.[0]) return j.chart.result[0];
+    } catch(e) {}
+  }
+  return null;
 }
 
 async function loadChart(period) {
