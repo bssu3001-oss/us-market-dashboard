@@ -405,7 +405,7 @@ async function loadChart(period) {
   return result;
 }
 
-async function switchPeriod(period, el) {
+async async function switchPeriod(period, el) {
   document.querySelectorAll('#sp500-tabs .period-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   _curPeriod = period;
