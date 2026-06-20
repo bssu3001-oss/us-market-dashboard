@@ -493,7 +493,9 @@ async function fetchAllLive() {
     setBadge('badge-gold',`$${fmt(gold.price,0)} ${arrow(gold.pct)}${Math.abs(gold.pct).toFixed(2)}% — ${gold.pct>=1?'안전자산↑(위험회피)':gold.pct<=-0.5?'위험선호(호재)':'혼조'}`,c);
   }
   if (eem) {
-    localStorage.setItem('shared_eem', JSON.stringify({price:eem.price,pct:eem.pct,ts:Date.now()}));
+    const _ce=JSON.parse(localStorage.getItem('shared_eem')||'null');
+    if (_ce&&(Date.now()-_ce.ts)<600000){eem={price:_ce.price,pct:_ce.pct};}
+    else{localStorage.setItem('shared_eem',JSON.stringify({price:eem.price,pct:eem.pct,ts:Date.now()}));}
     const c=eem.pct>=0.5?'badge-g':eem.pct<=-0.5?'badge-r':'badge-b';
     setBadge('badge-eem',`$${fmt(eem.price)} ${arrow(eem.pct)}${Math.abs(eem.pct).toFixed(2)}% — ${eem.pct>=0.5?'신흥국 상승':eem.pct<=-0.5?'신흥국 하락':'보합'}`,c);
   } else {
