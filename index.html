@@ -435,23 +435,23 @@ async function fetchAllLive() {
   const results = await Promise.all(tickers.map(t=>fetchQuote(t).catch(()=>null)));
   let [sp500, nasdaq, dow, vix, dxy, tnx, crude, gold, eem, tlt, usdkrw] = results;
 
-  // 프록시 실패 시 시장데이터.json(서버 수집·안정)으로 보강 → N/A 방지
+  // 시장데이터.json(서버 수집·안정): ①글로벌 공통지표 정규화 + ②프록시 실패 시 보강
   try {
-    if (!sp500||!vix||!dxy||!tnx||!crude||!gold||!eem||!tlt||!usdkrw) {
-      const jr = await fetch('시장데이터.json?_='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null);
-      if (jr) {
-        const mk=(p,pc)=>(p!=null&&p!==0)?{price:p,pct:pc||0,prev:p,open:p,high:p,low:p,high52:p,low52:p,_stale:true}:null;
-        if(!sp500 && jr.current!=null) sp500=mk(jr.current, jr.pct);
-        if(!nasdaq&& jr.nasdaq!=null)  nasdaq=mk(jr.nasdaq, jr.nasdaq_pct);
-        if(!vix  && jr.vix!=null)    vix  =mk(jr.vix, 0);
-        if(!dxy  && jr.dxy!=null)    dxy  =mk(jr.dxy, 0);
-        if(!tnx  && jr.tnx!=null)    tnx  =mk(jr.tnx, 0);
-        if(!crude&& jr.crude!=null)  crude=mk(jr.crude, 0);
-        if(!gold && jr.gold!=null)   gold =mk(jr.gold, jr.gold_pct);
-        if(!eem  && jr.eem!=null)    eem  =mk(jr.eem, jr.eem_pct);
-        if(!tlt  && jr.tlt!=null)    tlt  =mk(jr.tlt, jr.tlt_pct);
-        if(!usdkrw&&jr.usdkrw!=null) usdkrw=mk(jr.usdkrw, 0);
-      }
+    const jr = await fetch('시장데이터.json?_='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null);
+    if (jr) {
+      const mk=(p,pc)=>(p!=null&&p!==0)?{price:p,pct:pc||0,prev:p,open:p,high:p,low:p,high52:p,low52:p,_stale:true}:null;
+      // 글로벌 공통지표(EEM·US VIX·DXY)는 서버값으로 정규화 → 모든 탭이 동일 값
+      if (jr.eem!=null) eem = mk(jr.eem, jr.eem_pct);
+      if (jr.vix!=null) vix = mk(jr.vix, 0);
+      if (jr.dxy!=null) dxy = mk(jr.dxy, 0);
+      // 나머지는 프록시 실패(null)일 때만 보강
+      if(!sp500 && jr.current!=null) sp500=mk(jr.current, jr.pct);
+      if(!nasdaq&& jr.nasdaq!=null)  nasdaq=mk(jr.nasdaq, jr.nasdaq_pct);
+      if(!tnx  && jr.tnx!=null)    tnx  =mk(jr.tnx, 0);
+      if(!crude&& jr.crude!=null)  crude=mk(jr.crude, 0);
+      if(!gold && jr.gold!=null)   gold =mk(jr.gold, jr.gold_pct);
+      if(!tlt  && jr.tlt!=null)    tlt  =mk(jr.tlt, jr.tlt_pct);
+      if(!usdkrw&&jr.usdkrw!=null) usdkrw=mk(jr.usdkrw, 0);
     }
   } catch(e) {}
 
@@ -874,6 +874,21 @@ function applyAnalysis(ag) {
     }
   }
   if (ag.chart_analysis) { document.getElementById('ai-chart-analysis').textContent=ag.chart_analysis; }
+  bumpDangerForRSI();
+}
+
+// RSI 과매수(≥75)는 단기 위험을 올림 → 위험도가 '낮음'이면 '보통'으로 끌어올림
+function bumpDangerForRSI() {
+  const dEl = document.getElementById('sc-danger');
+  const rEl = document.getElementById('badge-rsi');
+  if (!dEl || !rEl) return;
+  const m = (rEl.textContent||'').match(/RSI\s*([\d.]+)/);
+  if (!m) return;
+  const rsi = parseFloat(m[1]);
+  if (rsi >= 75 && /낮음/.test(dEl.textContent)) {
+    dEl.textContent = '위험도 보통';
+    dEl.style.background = '#fdf6e8'; dEl.style.color = '#BA7517';
+  }
 }
 
 async function updateAI(liveData) {
