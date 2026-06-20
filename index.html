@@ -440,11 +440,11 @@ async function fetchAllLive() {
     const jr = await fetch('시장데이터.json?_='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null);
     if (jr) {
       const mk=(p,pc)=>(p!=null&&p!==0)?{price:p,pct:pc||0,prev:p,open:p,high:p,low:p,high52:p,low52:p,_stale:true}:null;
-      // 글로벌 공통지표(EEM·US VIX·DXY)는 서버값으로 정규화 → 모든 탭이 동일 값
+      // EEM만 서버값으로 정규화(모든 탭 동일). VIX·DXY는 라이브 유지(가격 기준·신선도 우선)
       if (jr.eem!=null) eem = mk(jr.eem, jr.eem_pct);
-      if (jr.vix!=null) vix = mk(jr.vix, 0);
-      if (jr.dxy!=null) dxy = mk(jr.dxy, 0);
       // 나머지는 프록시 실패(null)일 때만 보강
+      if(!vix  && jr.vix!=null)    vix  =mk(jr.vix, 0);
+      if(!dxy  && jr.dxy!=null)    dxy  =mk(jr.dxy, 0);
       if(!sp500 && jr.current!=null) sp500=mk(jr.current, jr.pct);
       if(!nasdaq&& jr.nasdaq!=null)  nasdaq=mk(jr.nasdaq, jr.nasdaq_pct);
       if(!tnx  && jr.tnx!=null)    tnx  =mk(jr.tnx, 0);
