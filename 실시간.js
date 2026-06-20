@@ -404,7 +404,7 @@
       for (const [k, v] of Object.entries(obj)) {
         if (!v || !v.label) continue;
         const label = v.label.trim();
-        if (!label || label.includes('없음')) continue;
+        if (!label || /데이터|부재|없음|미정|불명|모름|N\/A|VIX|^-+$/.test(label)) continue;
         const el = document.getElementById(idMap[k]);
         if (el) { el.textContent = label; el.className = 'badge ' + (sentCls[v.sentiment] || 'badge-y'); }
       }
