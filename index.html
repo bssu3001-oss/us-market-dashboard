@@ -433,7 +433,27 @@ async function fetchQuote(ticker) {
 async function fetchAllLive() {
   const tickers = ['^GSPC','^IXIC','^DJI','^VIX','DX-Y.NYB','^TNX','BZ=F','GC=F','EEM','TLT','KRW=X'];
   const results = await Promise.all(tickers.map(t=>fetchQuote(t).catch(()=>null)));
-  const [sp500, nasdaq, dow, vix, dxy, tnx, crude, gold, eem, tlt, usdkrw] = results;
+  let [sp500, nasdaq, dow, vix, dxy, tnx, crude, gold, eem, tlt, usdkrw] = results;
+
+  // 프록시 실패 시 시장데이터.json(서버 수집·안정)으로 보강 → N/A 방지
+  try {
+    if (!sp500||!vix||!dxy||!tnx||!crude||!gold||!eem||!tlt||!usdkrw) {
+      const jr = await fetch('시장데이터.json?_='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null);
+      if (jr) {
+        const mk=(p,pc)=>(p!=null&&p!==0)?{price:p,pct:pc||0,prev:p,open:p,high:p,low:p,high52:p,low52:p,_stale:true}:null;
+        if(!sp500 && jr.current!=null) sp500=mk(jr.current, jr.pct);
+        if(!nasdaq&& jr.nasdaq!=null)  nasdaq=mk(jr.nasdaq, jr.nasdaq_pct);
+        if(!vix  && jr.vix!=null)    vix  =mk(jr.vix, 0);
+        if(!dxy  && jr.dxy!=null)    dxy  =mk(jr.dxy, 0);
+        if(!tnx  && jr.tnx!=null)    tnx  =mk(jr.tnx, 0);
+        if(!crude&& jr.crude!=null)  crude=mk(jr.crude, 0);
+        if(!gold && jr.gold!=null)   gold =mk(jr.gold, jr.gold_pct);
+        if(!eem  && jr.eem!=null)    eem  =mk(jr.eem, jr.eem_pct);
+        if(!tlt  && jr.tlt!=null)    tlt  =mk(jr.tlt, jr.tlt_pct);
+        if(!usdkrw&&jr.usdkrw!=null) usdkrw=mk(jr.usdkrw, 0);
+      }
+    }
+  } catch(e) {}
 
   // S&P 500
   if (sp500) {
@@ -493,14 +513,8 @@ async function fetchAllLive() {
     setBadge('badge-gold',`$${fmt(gold.price,0)} ${arrow(gold.pct)}${Math.abs(gold.pct).toFixed(2)}% — ${gold.pct>=1?'안전자산↑(위험회피)':gold.pct<=-0.5?'위험선호(호재)':'혼조'}`,c);
   }
   if (eem) {
-    const _ce=JSON.parse(localStorage.getItem('shared_eem')||'null');
-    if (_ce&&(Date.now()-_ce.ts)<600000){eem={price:_ce.price,pct:_ce.pct};}
-    else{localStorage.setItem('shared_eem',JSON.stringify({price:eem.price,pct:eem.pct,ts:Date.now()}));}
     const c=eem.pct>=0.5?'badge-g':eem.pct<=-0.5?'badge-r':'badge-b';
     setBadge('badge-eem',`$${fmt(eem.price)} ${arrow(eem.pct)}${Math.abs(eem.pct).toFixed(2)}% — ${eem.pct>=0.5?'신흥국 상승':eem.pct<=-0.5?'신흥국 하락':'보합'}`,c);
-  } else {
-    const _ce=JSON.parse(localStorage.getItem('shared_eem')||'null');
-    if (_ce&&(Date.now()-_ce.ts)<600000){const c=_ce.pct>=0.5?'badge-g':_ce.pct<=-0.5?'badge-r':'badge-b';setBadge('badge-eem',`$${fmt(_ce.price)} ${_ce.pct>=0?'▲':'▼'}${Math.abs(_ce.pct).toFixed(2)}% — ${_ce.pct>=0.5?'신흥국 상승':_ce.pct<=-0.5?'신흥국 하락':'보합'}`,c);}
   }
   if (tlt) {
     // TLT 상승 = 금리 하락 기대 = 주식 호재

@@ -133,7 +133,7 @@ def fetch_market_data():
     from_hi = (cur - hi52)/hi52*100
 
     # 추가 지표
-    extras = yf.download(['^VIX','DX-Y.NYB','^TNX','BZ=F','GC=F','KRW=X','^IXIC'],
+    extras = yf.download(['^VIX','DX-Y.NYB','^TNX','BZ=F','GC=F','KRW=X','^IXIC','EEM','TLT'],
                           period='5d', interval='1d', progress=False)
     def last_close(ticker):
         try:
@@ -143,6 +143,16 @@ def fetch_market_data():
             return float(vals.iloc[-1]) if len(vals) else None
         except Exception:
             return None
+    def pct_close(ticker):
+        try:
+            col = ('Close', ticker) if ('Close', ticker) in extras.columns else None
+            if col is None: return 0
+            vals = extras[col].dropna()
+            if len(vals) >= 2:
+                return round(float((vals.iloc[-1]-vals.iloc[-2])/vals.iloc[-2]*100), 2)
+        except Exception:
+            pass
+        return 0
 
     vix      = last_close('^VIX')
     dxy      = last_close('DX-Y.NYB')
@@ -151,6 +161,11 @@ def fetch_market_data():
     gold     = last_close('GC=F')
     usdkrw   = last_close('KRW=X')
     nasdaq   = last_close('^IXIC')
+    eem      = last_close('EEM')
+    eem_pct  = pct_close('EEM')
+    tlt      = last_close('TLT')
+    tlt_pct  = pct_close('TLT')
+    gold_pct = pct_close('GC=F')
 
     # 전일 대비 등락
     try:
@@ -174,9 +189,14 @@ def fetch_market_data():
         'tnx':        round(tnx, 2) if tnx else None,
         'crude':      round(crude, 1) if crude else None,
         'gold':       round(gold, 0) if gold else None,
+        'gold_pct':   gold_pct,
         'usdkrw':     round(usdkrw, 0) if usdkrw else None,
         'nasdaq':     round(nasdaq, 2) if nasdaq else None,
         'nasdaq_pct': round(nasdaq_pct, 2),
+        'eem':        round(eem, 2) if eem else None,
+        'eem_pct':    eem_pct,
+        'tlt':        round(tlt, 2) if tlt else None,
+        'tlt_pct':    tlt_pct,
     }
 
 # ── 종합 점수 ──
