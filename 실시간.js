@@ -386,7 +386,7 @@
     if (!newsBlock) return;
 
     const sys = '당신은 미국 증시 뉴스 분석가입니다. 주어진 헤드라인을 보고 각 항목을 평가하세요. 반드시 JSON만 출력합니다.';
-    const prompt = `아래는 오늘 미국 증시 관련 실제 헤드라인입니다.\n${newsBlock}\n\n이 뉴스들을 근거로 각 항목(fed=연준금리, cpi=물가, nfp=고용, earnings=기업실적, trade=무역관세, geo=지정학)에 대해 한국어 12자 이내 label 과 미국 증시 영향 sentiment(good=호재, bad=악재, neutral=중립)를 매기세요. 관련 뉴스가 없으면 neutral.\n다음 형식의 JSON만 출력:\n{"fed":{"label":"...","sentiment":"good|bad|neutral"},"cpi":{...},"nfp":{...},"earnings":{...},"trade":{...},"geo":{...}}`;
+    const prompt = `아래는 오늘 미국 증시 관련 실제 헤드라인입니다.\n${newsBlock}\n\n이 뉴스들을 근거로 각 항목에 대해 한국어 10자 이내 label 과 sentiment(good/bad/neutral)를 매기세요.\n항목: fed=연준금리, cpi=물가, nfp=고용, earnings=기업실적, trade=무역관세, geo=지정학\n\n규칙:\n- 뉴스에 직접 언급된 항목: 내용 반영한 구체적 label (예: "금리 동결 유지", "반도체 호실적", "관세 협상 진전")\n- 언급 안 된 항목도 반드시 현재 시장 맥락에 맞는 label을 써주세요 (예: "CPI 발표 대기", "고용 관망", "무역 긴장 지속", "지정학 안정세")\n- "관련뉴스없음" 같은 표현은 절대 사용 금지\n다음 형식의 JSON만 출력:\n{"fed":{"label":"...","sentiment":"good|bad|neutral"},"cpi":{...},"nfp":{...},"earnings":{...},"trade":{...},"geo":{...}}`;
 
     try {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -403,8 +403,10 @@
       const idMap = { fed: 'badge-fed', cpi: 'badge-cpi', nfp: 'badge-nfp', earnings: 'badge-earnings', trade: 'badge-trade', geo: 'badge-geo' };
       for (const [k, v] of Object.entries(obj)) {
         if (!v || !v.label) continue;
+        const label = v.label.trim();
+        if (!label || label.includes('없음')) continue;
         const el = document.getElementById(idMap[k]);
-        if (el) { el.textContent = v.label; el.className = 'badge ' + (sentCls[v.sentiment] || 'badge-y'); }
+        if (el) { el.textContent = label; el.className = 'badge ' + (sentCls[v.sentiment] || 'badge-y'); }
       }
       const note = document.getElementById('news-live-note');
       if (note) note.textContent = '✓ 뉴스 신호 방금 갱신됨';
