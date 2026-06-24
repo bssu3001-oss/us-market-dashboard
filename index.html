@@ -356,7 +356,7 @@ async function fetchYahoo(ticker, interval, range) {
   const proxies = [
     u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
     u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    u => `https://thingproxy.freeboard.io/fetch/${u}`,
+    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
   ];
   for (const make of proxies) {
     try {
@@ -713,7 +713,7 @@ function recalcScorecard() {
   document.getElementById('sc-bar').style.width=pct+'%'; document.getElementById('sc-bar').style.background=color;
   document.getElementById('sc-tech').textContent=(tS>=0?'+':'')+tS.toFixed(1); document.getElementById('sc-tech').style.color=color;
   document.getElementById('sc-macro').textContent=(mS>=0?'+':'')+mS.toFixed(1); document.getElementById('sc-macro').style.color=color;
-  document.getElementById('sc-news').textContent=(nS>=0?'+':'')+nS.toFixed(1); document.getElementById('sc-news').style.color=color;
+  document.getElementById('sc-news').textContent=(nS>=0?'+':'')+nS.toFixed(1); document.getElementById('sc-news').style.color=color; document.getElementById('sc-news').style.display='inline';
 }
 
 function ruleBasedAnalysis(liveData) {
@@ -911,12 +911,15 @@ DXY: ${liveData?.dxy?fmt(liveData.dxy.price):'N/A'}
 ${newsLines ? '\n[최신 뉴스 헤드라인]\n' + newsLines : ''}`;
 
   try {
+    const _ctrl=new AbortController(); const _to=setTimeout(()=>_ctrl.abort(),15000);
     const r = await fetch('https://api.anthropic.com/v1/messages',{
+      signal:_ctrl.signal,
       method:'POST',
       headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:900,system:ctx,messages:[{role:'user',content:`아래 JSON 형식으로만 답하세요 (다른 텍스트 없이):
-{"now_title":"📌 지금 — [현황]","now_desc":"[2문장]","buy1_title":"🟢 1차 매수 조건","buy1_desc":"[2문장]","buy2_title":"🟢 2차 매수 조건","buy2_desc":"[2문장]","sell_title":"🔴 손절 조건","sell_desc":"[1~2문장]","sc_desc":"[종합 분석 2~3문장]","sc_price_pos":"52주 고점 대비 위치 (예: 고점대비 -8%)","sc_appeal":"핵심 매력 10자 이내","sc_risk":"핵심 리스크 10자 이내","sc_entry":"진입 단서 15자 이내","sc_danger":"낮음/보통/높음 중 하나","chart_analysis":"• 현재 지수: [가격] ([변화율]) — [한줄요약]\\n\\n• 추세 (이평): [분석]\\n\\n• 모멘텀: [분석]\\n\\n• 한 줄 결론: [결론]"}`}]})
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1100,system:ctx,messages:[{role:'user',content:`아래 JSON 형식으로만 답하세요 (다른 텍스트 없이):
+{"now_title":"📌 지금 — [현황]","now_desc":"[2문장]","buy1_title":"🟢 1차 매수 조건","buy1_desc":"[2문장]","buy2_title":"🟢 2차 매수 조건","buy2_desc":"[2문장]","sell_title":"🔴 손절 조건","sell_desc":"[1~2문장]","sc_price_pos":"52주 고점 대비 위치 (예: 고점대비 -8%)","sc_appeal":"핵심 매력 10자 이내","sc_risk":"핵심 리스크 10자 이내","sc_entry":"진입 단서 15자 이내","sc_danger":"낮음/보통/높음 중 하나","sc_oneliner":"현 시장 상황을 15자 이내 한줄로","chart_analysis":"• 현재 지수: [가격] ([변화율]) — [한줄요약]\\n\\n• 추세 (이평): [분석]\\n\\n• 모멘텀: [분석]\\n\\n• 한 줄 결론: [결론]"}`}]})
     });
+    clearTimeout(_to);
     const d = await r.json();
     if (d.error) { applyAnalysis(ruleBasedAnalysis(liveData)); return; }
     const text = d.content?.[0]?.text||'';
@@ -939,10 +942,6 @@ function saveKey() {
   document.getElementById('key-setup').style.display='none';
   document.getElementById('ai-resp').textContent='API 키가 저장됐어요.';
 }
-function toggleKeySetup() {
-  const el=document.getElementById('key-setup');
-  el.style.display=el.style.display==='none'?'block':'none';
-}
 function setQ(q) { document.getElementById('ai-q').value=q; }
 
 async function askAI() {
@@ -958,11 +957,14 @@ S&P 500: ${n?fmt(n.price)+` (${n.pct>=0?'+':''}${n.pct.toFixed(2)}%)`:'N/A'}
 종합신호: ${sc}
 3~5문장, 한국어, 마지막에 "이 답변은 참고용입니다" 명시.`;
   try {
+    const _ctrl=new AbortController(); const _to=setTimeout(()=>_ctrl.abort(),15000);
     const r=await fetch('https://api.anthropic.com/v1/messages',{
+      signal:_ctrl.signal,
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,system:ctx,messages:[{role:'user',content:q}]})
     });
+    clearTimeout(_to);
     const d=await r.json();
     if (d.error) {
       const msg = d.error.message || '';
@@ -971,7 +973,7 @@ S&P 500: ${n?fmt(n.price)+` (${n.pct>=0?'+':''}${n.pct.toFixed(2)}%)`:'N/A'}
       return;
     }
     box.textContent=d.content?.[0]?.text||('오류: '+JSON.stringify(d.error||d));
-  } catch(e) { box.textContent='네트워크 오류: '+e.message; }
+  } catch(e) { box.textContent = e.name==='AbortError' ? '응답이 늦어 중단했어요. 다시 시도해주세요.' : '네트워크 오류: '+e.message; }
 }
 
 document.getElementById('ai-q').addEventListener('keydown',e=>{if(e.key==='Enter')askAI();});
@@ -987,6 +989,7 @@ async function init() {
 init();
 setInterval(async()=>{
   const live=await fetchAllLive().catch(()=>null);
+  await updateAI(live).catch(()=>{});
   recalcScorecard();
   delete _chartCache['d1'];
 },5*60*1000);

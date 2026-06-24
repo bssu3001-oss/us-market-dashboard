@@ -323,7 +323,7 @@
       else if (isG && isR)  { cls = 'badge-y'; text = nT; }
       else { const _h = findRelatedHeadline(relKw[id] || []); if (_h) { cls = 'badge-b'; text = _h; } else if (dT) { cls = 'badge-y'; text = dT; } else { return; } }
       const el = document.getElementById(id);
-      if (el) { el.textContent = text; el.className = 'badge ' + cls; }
+      if (el && el.dataset.src !== 'ai') { el.textContent = text; el.className = 'badge ' + cls; }
     }
 
     ko('badge-fed',
@@ -389,11 +389,14 @@
     const prompt = `아래는 오늘 미국 증시 관련 실제 헤드라인입니다.\n${newsBlock}\n\n이 뉴스들을 근거로 각 항목에 대해 한국어 10자 이내 label 과 sentiment(good/bad/neutral)를 매기세요.\n항목: fed=연준금리, cpi=물가, nfp=고용, earnings=기업실적, trade=무역관세, geo=지정학\n\n규칙:\n- 뉴스에 직접 언급된 항목: 내용 반영한 구체적 label (예: "금리 동결 유지", "반도체 호실적", "관세 협상 진전")\n- 언급 안 된 항목도 반드시 현재 시장 맥락에 맞는 label을 써주세요 (예: "CPI 발표 대기", "고용 관망", "무역 긴장 지속", "지정학 안정세")\n- "관련뉴스없음" 같은 표현은 절대 사용 금지\n다음 형식의 JSON만 출력:\n{"fed":{"label":"...","sentiment":"good|bad|neutral"},"cpi":{...},"nfp":{...},"earnings":{...},"trade":{...},"geo":{...}}`;
 
     try {
+      const _ctrl = new AbortController(); const _to = setTimeout(() => _ctrl.abort(), 15000);
       const r = await fetch('https://api.anthropic.com/v1/messages', {
+        signal: _ctrl.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, system: sys, messages: [{ role: 'user', content: prompt }] }),
       });
+      clearTimeout(_to);
       const d = await r.json();
       const text = d.content?.[0]?.text || '';
       const m = text.match(/\{[\s\S]*\}/);
@@ -406,7 +409,7 @@
         const label = v.label.trim();
         if (!label || /데이터|부재|없음|미정|불명|모름|N\/A|VIX|^-+$/.test(label)) continue;
         const el = document.getElementById(idMap[k]);
-        if (el) { el.textContent = label; el.className = 'badge ' + (sentCls[v.sentiment] || 'badge-y'); }
+        if (el) { el.textContent = label; el.className = 'badge ' + (sentCls[v.sentiment] || 'badge-y'); el.dataset.src = 'ai'; }
       }
       const note = document.getElementById('news-live-note');
       if (note) note.textContent = '✓ 뉴스 신호 방금 갱신됨';
@@ -492,15 +495,18 @@
     const news = window.__majorNews || '';
     const ctx = `당신은 ${MARKET_DESC} 전문 애널리스트입니다. 아래 실시간 데이터와 오늘의 뉴스를 근거로 한국어로 간결하고 구체적으로 답하세요. 마지막에 "본 답변은 참고용입니다"를 덧붙이세요.\n\n[종합신호] ${sc}\n[지표·신호]\n${signals}` + (news ? `\n\n[오늘의 주요 뉴스]\n${news}` : '');
     try {
+      const _ctrl = new AbortController(); const _to = setTimeout(() => _ctrl.abort(), 15000);
       const r = await fetch('https://api.anthropic.com/v1/messages', {
+        signal: _ctrl.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 700, system: ctx, messages: [{ role: 'user', content: q }] }),
       });
+      clearTimeout(_to);
       const d = await r.json();
       if (d.content && d.content[0] && d.content[0].text) box.textContent = d.content[0].text;
       else box.textContent = '오류: ' + JSON.stringify(d.error || d);
-    } catch (e) { box.textContent = '네트워크 오류: ' + e.message; }
+    } catch (e) { box.textContent = e.name === 'AbortError' ? '응답이 늦어 중단했어요. 다시 시도해주세요.' : '네트워크 오류: ' + e.message; }
   };
 
   // ── 전체 실행 ──
