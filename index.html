@@ -641,7 +641,7 @@ function setNewsBadgesDirect(titles) {
     if      (isG && !isR) { text = gT; cls = 'badge-g'; }
     else if (isR && !isG) { text = rT; cls = 'badge-r'; }
     else if (isG && isR)  { text = nT; cls = 'badge-y'; }
-    else { const h = findKw(relKw); if (h) { text = h; cls = 'badge-b'; } else if (dT) { text = dT; cls = 'badge-y'; } else return; }
+    else if (dT) { text = dT; cls = 'badge-y'; } else return; // 매칭 없으면 기본 라벨만 (원문 헤드라인 금지)
     el.textContent = text; el.className = 'badge ' + cls;
   });
 }
