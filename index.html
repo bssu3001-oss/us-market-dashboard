@@ -893,7 +893,7 @@ function ruleBasedAnalysis(liveData) {
   const dxyPctC  = _liveData?.dxy?.pct ?? null;
   const dxyColor = dxyPctC == null ? 'blue' : dxyPctC <= -0.3 ? 'green' : dxyPctC >= 0.3 ? 'red' : 'yellow';
   const dxyShort = _liveData?.dxy?.price ? _liveData.dxy.price.toFixed(1) : 'N/A';
-  const sc_desc = `<div style="display:flex;gap:3px;flex-wrap:wrap;">${mkChip('이평선',maShort,maColor)}${mkChip('모멘텀',momShort,momColor)}${mkChip('RSI',rsiShort,rsiColor)}${mkChip('VIX',vixShort,vixColor)}${mkChip('10년물',tnxShort,tnxColor)}${mkChip('EEM',eemShort,eemColor)}${mkChip('DXY',dxyShort,dxyColor)}</div>`;
+  const sc_desc = `<div style="display:flex;gap:3px;flex-wrap:wrap;">${mkChip('이평(주봉)',maShort,maColor)}${mkChip('모멘텀',momShort,momColor)}${mkChip('RSI(주봉)',rsiShort,rsiColor)}${mkChip('VIX',vixShort,vixColor)}${mkChip('10년물',tnxShort,tnxColor)}${mkChip('EEM',eemShort,eemColor)}${mkChip('DXY',dxyShort,dxyColor)}</div>`;
 
   const trendConclusion = maBadge==='badge-g'
     ? (newsFavorable ? '상승 추세 + 뉴스 호재 — 눌림목 매수 적극 검토' : '상승 추세 유지 — 눌림목 매수 기회 탐색')
